@@ -1,0 +1,487 @@
+﻿@page "/usertable"
+@attribute [StreamRendering]
+@using System.Linq
+@using IndoorMappingWebsite.Models
+@using IndoorMappingWebsite.Services
+@inject IUserService UserService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager NavigationManager
+
+<PageTitle>Users Table</PageTitle>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    /* Navbar Styles */
+    .navbarList {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: darkred;
+        padding: 0 20px;
+        list-style: none;
+        margin: 0;
+        height: 60px;
+    }
+
+    .logo a {
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .navbarItem {
+        margin-left: 15px;
+    }
+
+        .navbarItem a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+            .navbarItem a:hover:not(.active) {
+                background-color: #540000;
+            }
+
+            .navbarItem a.active {
+                background-color: gray;
+            }
+
+    /* Center container and buttons */
+    .center-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 60px);
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+
+        .center-container h1 {
+            margin-bottom: 3rem;
+            font-size: 2rem;
+            color: #343a40;
+        }
+
+    /* Filter input */
+    .search-bar {
+        margin-bottom: 1.5rem;
+        width: 100%;
+        max-width: 500px;
+    }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            font-size: 1.1rem;
+        }
+
+    /* Table Container */
+    .table-container {
+        width: 80%;
+        height: calc(100vh - 200px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-top: 2rem;
+        margin-bottom: 0;
+        padding: 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        padding: 0;
+    }
+    th, td {
+        vertical-align: middle;
+        text-align: center;
+        padding: 12px;
+        font-size: 1.1rem;
+    }
+
+    th {
+        color: white;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+    thead{
+        position: sticky;
+        top: 0;
+        background-color: darkred;
+    }
+    button
+    {
+        width: 80px;
+    }
+    .addbtn{
+        background-color: darkred;
+        position: sticky;
+        bottom: 0;
+    }
+    input{
+        text-align: center;
+    }
+
+    .canto-inferior-direito {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px;
+        background-color: @messageColor;
+        border-radius: 16px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 9999;
+    }
+
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: black;
+        opacity: 0.5;
+        z-index: 10; /* um pouco abaixo do modal */
+    }
+
+</style>
+@if (showModal)
+{
+    <div class="modal-backdrop-custom"></div>
+}
+@if(message!="" && message!=null)
+{
+    <div class="canto-inferior-direito">
+        @message
+    </div>
+}
+<!-- Navbar -->
+<ul class="navbarList">
+    <li class="logo"><a href="home">IndoorMap</a></li>
+    <div style="display: flex;">
+        <li class="navbarItem"><a href="home">Home</a></li>
+        <li class="navbarItem"><a href="map">Map</a></li>
+        <li class="navbarItem"><a class="active" href="usertable">Users</a></li>
+        <li class="navbarItem"><a href="beaconstable">Beacons</a></li>
+        <li class="navbarItem"><a href="pathsmap">Paths</a></li>
+        <li class="navbarItem"><a href="logstable">Logs</a></li>
+        <li class="navbarItem"><a href="infrastructuretable">Infrastructure</a></li>
+        <li class="navbarItem"><a href="feedbacktable">Feedback</a></li>
+
+    </div>
+</ul>
+
+<div class="center-container">
+    <h1>Users Table</h1>
+
+    <!-- Search Input -->
+    <div class="search-bar">
+        <input type="text" @oninput="OnSearchInput" placeholder="Search by name, email, or type..." class="form-control" />
+    </div>
+
+    <!-- Table with Filtered Data inside a Scrollable Container -->
+    <div class="table-container">
+        <table class="table table-striped m-0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Password</th>
+                    <th>Type</th>
+                    <th>Mobility</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var person in FilteredPeople)
+                {
+                    <tr>
+                        <td>@person.nome</td>
+                        <td>@person.email</td>
+                        <td>Encrypted</td>
+                        <td>@person.tipoUsuario</td>
+                        <td>@person.mobilidadeTipo</td>
+                        <td><button type="button" class="btn btn-primary" @onclick="() => ShowEditModal(person)">Edit</button></td>
+                        <td><button type="button" class="btn btn-danger" @onclick="() => HandleDeleteSubmit(person.usuarioId)">Delete</button></td>
+                    </tr>
+                }
+                <tr class="addbtn">
+                    <td><InputText class="form-control" placeholder="Insert Name..." @bind-Value="newUser.nome" /></td>
+                    <td><InputText class="form-control" placeholder="Insert Email..." @bind-Value="newUser.email" /></td>
+                    <td><InputText class="form-control" placeholder="Insert Password..." @bind-Value="newUser.password" /></td>
+                    <td>
+                        <select @bind=newUser.tipoId class="form-select">
+                            <option value="1">Admin</option>
+                            <option value="4">User</option>
+                            <option value="2">Editor</option>
+                            <option value="3">Reader</option>
+                        </select></td>
+                    <td>
+                        <select @bind=newUser.mobilidadeId class="form-select">
+                            <option value="1">Normal</option>
+                            <option value="2">Paraplegic</option>
+                            <option value="3">Tetraplegic</option>
+                        </select>
+                    </td>
+                    <td></td>
+                    <td><button type="button" class="btn btn-success" @onclick="HandleValidSubmit">Add</button></td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+    <div class="modal" tabindex="-1" style="display:@(showModal ? "block" : "none")" aria-hidden="@(showModal ? "false" : "true")">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="userToEdit" OnValidSubmit="HandleEditSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">Name</label>
+                            <InputText id="nome" class="form-control" @bind-Value="userToEdit.nome" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <InputText id="email" class="form-control" @bind-Value="userToEdit.email" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tipoUsuario" class="form-label">Type</label>
+                            <select @bind=userToEdit.tipoUsuarioId class="form-select">
+                                <option value="1">Admin</option>
+                                <option value="4">User</option>
+                                <option value="2">Editor</option>
+                                <option value="3">Reader</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="mobilidade" class="form-label">Mobility</label>
+                            <select @bind=userToEdit.mobilidadeId class="form-select">
+                                <option value="1">Normal</option>
+                                <option value="2">Paraplegic</option>
+                                <option value="3">Tetraplegic</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _hasNavigated = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasNavigated)
+        {
+            var token = await localStorage.GetItemAsync<string>("authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                _hasNavigated = true;
+                NavigationManager.NavigateTo("/");
+            }
+        }
+    }
+    public class UserGet
+    {
+        public int usuarioId { get; set; }
+        public String nome { get; set; } = string.Empty;
+        public String email { get; set; } = string.Empty;
+        public String tipoUsuario { get; set; } = string.Empty;
+        public String mobilidadeTipo { get; set; } = string.Empty;
+    }
+    public class UserEdit
+    {
+        public int usuarioId { get; set; }
+        public String nome { get; set; } = string.Empty;
+        public String email { get; set; } = string.Empty;
+        public int tipoUsuarioId { get; set; }
+        public int mobilidadeId { get; set; }
+    }
+    private List<UserGet> Users = new List<UserGet>();
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await UserService.GetUsersAsync();
+    }
+    private string messageColor = "green";
+    // The search query from the input
+    private string searchQuery = string.Empty;
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value.ToString();
+    }
+
+    // Get the filtered people based on the search query
+    private IEnumerable<UserGet> FilteredPeople =>
+        Users.Where(p => p.nome.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                          p.email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                          p.tipoUsuario.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                          p.mobilidadeTipo.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+
+
+
+    private User newUser = new();
+    private string message;
+    private CancellationTokenSource? cts;
+
+    private async Task startTimer(string msg, string Color)
+    {
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+        message = msg;
+        messageColor = Color;
+        StateHasChanged();
+        try
+        {
+            await Task.Delay(5000, token);
+            message = "";
+            StateHasChanged();
+        }
+        catch (TaskCanceledException)
+        {
+
+        }
+    }
+
+    public async Task HandleValidSubmit()
+    {
+        var success = await UserService.CreateUserAsync(newUser);
+        if (success)
+        {
+            startTimer("Utilizador criado com sucesso!", "green");
+            newUser = new(); // limpa o form
+            Users = await UserService.GetUsersAsync();
+        }
+        else
+        {
+            startTimer("Erro ao criar utilizador.", "red");
+        }
+    }
+    public async Task HandleDeleteSubmit(int id)
+    {
+        var success = await UserService.DeleteUserById(id);
+        if (success)
+        {
+            startTimer("Utilizador eliminado com sucesso!", "green");
+            Users = await UserService.GetUsersAsync();
+            var email = await localStorage.GetItemAsync<string>("email");
+            if(Users.FirstOrDefault(p => p.email == email) == null)
+            {
+                await localStorage.ClearAsync();
+                NavigationManager.NavigateTo("/");
+            }
+        }
+        else
+        {
+            startTimer("Erro ao eliminar Utilizador.", "red");
+        }
+    }
+    private bool showModal = false;
+    private UserEdit userToEdit = new UserEdit();
+    private void ShowEditModal(UserGet user)
+    {
+        int tipoId = 1;
+        int mobilidadeid = 1;
+        switch(user.tipoUsuario)
+        {
+            case "Admin":
+                tipoId = 1;
+                break;
+            case "User":
+                tipoId = 4;
+                break;
+            case "Editor":
+                tipoId = 2;
+                break;
+            case "Reader":
+                tipoId = 3;
+                break;
+        }
+        switch(user.mobilidadeTipo)
+        {
+            case "Normal":
+                mobilidadeid = 1;
+                break;
+            case "Tetraplégico":
+                mobilidadeid = 3;
+                break;
+            case "Paraplégico":
+                mobilidadeid = 2;
+                break;
+        }
+        userToEdit = new UserEdit
+            {
+                usuarioId = user.usuarioId,
+                nome = user.nome,
+                email = user.email,
+                tipoUsuarioId = tipoId,
+                mobilidadeId = mobilidadeid
+            };
+        showModal = true; // Exibe o modal
+    }
+
+    private void CloseModal()
+    {
+        showModal = false; // Fecha o modal
+    }
+    private async Task HandleEditSubmit()
+    {
+        // Aqui você pode chamar seu serviço para atualizar o beacon no servidor
+        var sucesso = await UserService.UpdateUserById(userToEdit);
+
+        if (sucesso)
+        {
+            /*
+            // Atualizar a lista ou fazer outras ações após a edição
+            var beacon = FilteredBeacons.FirstOrDefault(b => b.id == beaconToEdit.id);
+            if (beacon != null)
+            {
+                beacon.nome = beaconToEdit.nome;
+                beacon.longitude = beaconToEdit.longitude;
+                beacon.latitude = beaconToEdit.latitude;
+                beacon.localizacao = beaconToEdit.localizacao;
+                }*/
+                                        Users = await UserService.GetUsersAsync();
+
+            CloseModal(); // Fecha o modal após a edição
+            startTimer("Utilizador editado com sucesso!", "green");
+        }
+        else
+        {
+            startTimer("Erro ao editar utilizador.", "red");
+        }
+    }
+}

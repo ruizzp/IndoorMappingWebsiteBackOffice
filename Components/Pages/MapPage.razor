@@ -1,0 +1,359 @@
+﻿
+@page "/map"
+@using IndoorMappingWebsite.Models
+@using IndoorMappingWebsite.Services
+@using System.Text.Json
+@using System.Timers
+@inject IJSRuntime JSRuntime
+@inject IJSRuntime JS
+@inject IBeaconService BeaconService
+@inject IUserLocService UserLocService
+@inject IPathMapService PathMapService
+
+@inject IAccessibilityService AccessibilityService
+@inject IInfraestruturaService InfraestruturaService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager NavigationManager
+
+<style>
+    body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    }
+
+    /* Navbar Styles */
+    .navbarList {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: darkred;
+    padding: 0 20px;
+    list-style: none;
+    margin: 0;
+    height: 60px;
+    }
+
+    .logo a {
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    text-decoration: none;
+    }
+
+    .navbarItem {
+    margin-left: 15px;
+    }
+
+    .navbarItem a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+    }
+
+    .navbarItem a:hover:not(.active) {
+    background-color: #540000;
+    }
+
+    .navbarItem a.active {
+    background-color: gray;
+    }
+
+</style>
+
+
+<!-- Navbar -->
+<ul class="navbarList">
+    <li class="logo"><a href="home">IndoorMap</a></li>
+    <div style="display: flex;">
+        <li class="navbarItem"><a href="home">Home</a></li>
+        <li class="navbarItem"><a class="active" href="map">Map</a></li>
+        <li class="navbarItem"><a href="usertable">Users</a></li>
+        <li class="navbarItem"><a href="beaconstable">Beacons</a></li>
+        <li class="navbarItem"><a href="pathsmap">Paths</a></li>
+        <li class="navbarItem"><a href="logstable">Logs</a></li>
+        <li class="navbarItem"><a href="infrastructuretable">Infrastructure</a></li>
+        <li class="navbarItem"><a href="feedbacktable">Feedback</a></li>
+
+    </div>
+</ul>
+
+<select id="level">
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+</select>
+
+<div id="map" style="width: 100%; height: calc(100vh - 60px); border: 1px solid #ccc;"></div>
+
+<div id="context-menu" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; z-index:1000; padding:8px; border-radius:6px;">
+    <button @onclick="ShowBeaconEditModal">Put Beacon</button><br />
+    <button @onclick="ShowPathEditModal">Start Path</button>
+</div>
+
+
+<div class="modal" tabindex="-1" style="display:@(showBeaconModal ? "block" : "none")" aria-hidden="@(showBeaconModal ? "false" : "true")">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Beacon</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseBeaconModal"></button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="beaconToEdit" OnValidSubmit="HandleEditSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Name</label>
+                        <InputText id="nome" class="form-control" @bind-Value="beaconToEdit.nome" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="localizacao" class="form-label">Location</label>
+                        <InputText id="localizacao" class="form-control" @bind-Value="beaconToEdit.localizacao" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal" tabindex="-1" style="display:@(showPathModal ? "block" : "none")" aria-hidden="@(showPathModal ? "false" : "true")">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Path</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="ClosePathModal"></button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="pathToEdit" OnValidSubmit="HandlePathEditSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Name</label>
+                        <InputText id="nome" class="form-control" @bind-Value="pathToEdit.nome" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="origemId" class="form-label">Origin</label>
+                        <InputSelect @bind-Value=pathToEdit.origemId class="form-select">
+                            <option disabled selected value="-1">Select Origin</option>
+                            @foreach (var local in Infraestruturas)
+                            {
+                                <option value="@local.id">@($"{local.descricao} (Piso {local.piso})")</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="destinoId" class="form-label">Destiny</label>
+                        <InputSelect @bind-Value=pathToEdit.destinoId class="form-select">
+                            <option disabled selected value="-1">Select Origin</option>
+                            @foreach (var local in Infraestruturas)
+                            {
+                                <option value="@local.id">@($"{local.descricao} (Piso {local.piso})")</option>
+                            }
+                        </InputSelect>
+                    </div>
+
+
+                    <div class="mb-3">
+                        <label for="mobilidade" class="form-label">Mobility</label>
+                        <InputSelect @bind-Value=pathToEdit.acessivel class="form-select">
+                            <option value="true">Available</option>
+                            <option value="false">Unavailable</option>
+                        </InputSelect>
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _hasNavigated = false;
+
+    private Timer updateTimer;
+    private string currentTime;
+
+    DotNetObjectReference<MapPage>? dotNetRef;
+
+    private List<Beacon> beacons = new List<Beacon>();
+    private List<Caminho2> Caminhos = new List<Caminho2>();
+    private List<Infraestrutura> Infraestruturas = new List<Infraestrutura>();
+    private List<UserLoc> UserPositions = new List<UserLoc>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        dotNetRef = DotNetObjectReference.Create(this);
+        beacons = await BeaconService.GetBeaconsAsync();
+        Infraestruturas = await InfraestruturaService.GetInfraestruturasAsync();
+        Caminhos = await PathMapService.GetPathsAsync();
+        updateTimer = new Timer(10000);
+        //updateTimer.Elapsed += async (sender, args) => await UpdatePosition();
+        updateTimer.AutoReset = true;
+        updateTimer.Enabled = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasNavigated)
+        {
+            var token = await localStorage.GetItemAsync<string>("authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                _hasNavigated = true;
+                NavigationManager.NavigateTo("/");
+            }
+        }
+        if (firstRender)
+        {
+            await InitializeMap();
+            //await JS.InvokeVoidAsync("enableClick", dotNetRef);
+        } 
+        foreach (Beacon beacon in beacons)
+        {
+            await AddBeacon(beacon.longitude, beacon.latitude, beacon.piso, beacon.nome);
+        }
+        if(Caminhos.Count > 0)
+            await LoadPathsFromData(Caminhos);
+
+    }
+
+    private async Task InitializeMap()
+    {
+        // Chama o JavaScript para inicializar o mapa
+        await JSRuntime.InvokeVoidAsync("initMap", dotNetRef);
+    }
+
+    private async Task AddBeacon(double longitude, double latitude, int level, string nome)
+    {
+        // Chama o JavaScript para adicionar um beacon (ponto) no mapa
+        await JSRuntime.InvokeVoidAsync("addBeacon", longitude, latitude, level, nome);
+    }
+
+    private async Task AddPath(string name, int level)
+    {
+        // Chama o JavaScript para adicionar um caminho no mapa
+        await JSRuntime.InvokeVoidAsync("createPath", level.ToString(), name);
+    }
+
+    private async Task LoadPathsFromData(List<Caminho2> paths)
+    {
+        List<Caminho2Full> complete = Caminho2Full.mapCompleteInfo(paths, Infraestruturas);
+        //string resultJson = JsonSerializer.Serialize(paths, new JsonSerializerOptions { WriteIndented = true });
+        await JSRuntime.InvokeVoidAsync("loadPathsFromData", complete);
+    }
+
+    private async Task AddUserToMap(string userId, double longitude, double latitude, string name , string beaconName)
+    {
+        //string resultJson = JsonSerializer.Serialize(paths, new JsonSerializerOptions { WriteIndented = true });
+        await JSRuntime.InvokeVoidAsync("addOrUpdateUser", userId, longitude, latitude, name, beaconName);
+    }
+
+
+    private bool showBeaconModal = false;  
+
+    private Beacon beaconToEdit = new Beacon();
+    private double[] coordinates;
+
+    private async void ShowBeaconEditModal()
+    {
+        coordinates = await JSRuntime.InvokeAsync<double[]>("mapCoordinates");
+        beaconToEdit.longitude = coordinates[0];
+        beaconToEdit.latitude = coordinates[1];
+        beaconToEdit.piso = await JSRuntime.InvokeAsync<int>("getCurrentLevel");
+        showBeaconModal = true;
+        StateHasChanged();
+
+    }
+    private void CloseBeaconModal()
+    {
+        showBeaconModal = false;
+    }
+    private async Task HandleEditSubmit()
+    {
+        var sucesso = await BeaconService.CreateBeaconAsync(beaconToEdit);
+        if (sucesso)
+        {
+            await AddBeacon(beaconToEdit.longitude, beaconToEdit.latitude, beaconToEdit.piso, beaconToEdit.nome);
+        }
+        CloseBeaconModal();
+    }
+
+    //////////// <summary>
+    /// ////////////////////////////
+    /// </summary>
+
+    /// 
+    private bool showPathModal = false;
+    private Caminho2 pathToEdit = new Caminho2();
+    private async void ShowPathEditModal()
+    {
+        pathToEdit.piso = await JSRuntime.InvokeAsync<int>("getCurrentLevel");
+        await AddPath(pathToEdit.nome, pathToEdit.piso);
+    }
+
+    [JSInvokable]
+    public void ShowPathModal(String Data)
+    {
+        Console.WriteLine(Data);
+        pathToEdit.listaCoordenadas = Data;
+        showPathModal = true; // Exibe o modal
+        StateHasChanged();
+    }
+
+    private void ClosePathModal()
+    {
+        showPathModal = false; // Fecha o modal
+    }
+    private async Task HandlePathEditSubmit()
+    {
+        // Aqui você pode chamar seu serviço para atualizar o beacon no servidor
+        var sucesso = await PathMapService.CreatePathAsync(pathToEdit);
+        string resultJson = JsonSerializer.Serialize(pathToEdit, new JsonSerializerOptions { WriteIndented = true });
+
+        Console.WriteLine(resultJson);
+        if (sucesso)
+        {
+
+        }
+        ClosePathModal();
+    }
+    private string GetInfraDescricao(int id)
+    {
+        var infra = Infraestruturas.FirstOrDefault(i => i.id == id);
+        return infra != null ? $"{infra.descricao} (Piso {infra.piso})" : "";
+    }
+
+    private async Task UpdatePosition()
+    {
+
+        UserPositions = UserLocService.GetUsersLastPosition(await UserLocService.GetUsersAsync());
+
+        UserPositions.ForEach(async (user) =>
+        {
+            Beacon ?beacon = beacons.FirstOrDefault(x => x.id == user.beaconId);
+            if (beacon != null)
+                await AddUserToMap(user.id.ToString(), user.longitude, user.latitude, "PERSON", beacon.nome);
+        });
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        updateTimer?.Dispose();
+    }
+   
+}

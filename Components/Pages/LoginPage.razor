@@ -1,0 +1,218 @@
+﻿@page "/"
+@using System.ComponentModel.DataAnnotations
+@using IndoorMappingWebsite.Services
+
+@inject NavigationManager NavigationManager
+@inject ILoginService LoginService
+@inject IUserService userService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+<style>
+    .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: white; /* Fundo geral um pouco cinza claro */
+    }
+
+    .login-box {
+    background-color: #999999; /* Cinza escuro */
+    padding: 40px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    border: 2px solid black;
+    }
+
+    .login-box h3 {
+    color: black;
+    margin-bottom: 30px;
+    }
+
+    .form-group {
+    margin-bottom: 20px;
+    text-align: left;
+    }
+
+    label {
+    color: black;
+    margin-bottom: 5px;
+    display: block;
+    }
+
+    .form-control {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: white;
+    color: white;
+    border: none;
+    }
+
+    .btn-login {
+    background-color: #8b0000; /* Vermelho escuro */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+    }
+
+    .btn-login:hover {
+    background-color: #660000; /* Vermelho ainda mais escuro no hover */
+    }
+
+    .forgot-password {
+    margin-top: 20px;
+    font-size: 0.9em;
+    }
+
+    .forgot-password a {
+    color: #0a1172;
+    text-decoration: none;
+    }
+
+    .forgot-password a:hover {
+    text-decoration: underline;
+    }
+
+    .formText{
+    color: black;
+    }
+
+    .canto-inferior-direito {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px;
+    background-color: @messageColor;
+    border-radius: 16px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    }
+</style>
+
+<PageTitle>Login</PageTitle>
+@if (message != "" && message != null)
+{
+    <div class="canto-inferior-direito">
+        @message
+    </div>
+}
+<div class="login-container">
+    <div class="login-box">
+        <h3>Login</h3>
+
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+
+
+            <div class="form-group">
+                <label for="username">Email</label>
+                <InputText id="username" class="form-control formText" @bind-Value="loginModel.Email" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <InputText id="password" type="password" class="form-control formText" @bind-Value="loginModel.Password" />
+            </div>
+
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="forgot-password">
+                <a href="/">forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn btn-login">Login</button>
+
+
+        </EditForm>
+    </div>
+</div>
+
+
+@code {
+    private string message;
+    private string messageColor = "green";
+    private CancellationTokenSource? cts;
+    private async Task startTimer(string msg, string Color)
+    {
+        cts?.Cancel();
+        cts = new CancellationTokenSource();
+        var token = cts.Token;
+        message = msg;
+        messageColor = Color;
+        StateHasChanged();
+        try
+        {
+            await Task.Delay(5000, token);
+            message = "";
+            StateHasChanged();
+        }
+        catch (TaskCanceledException)
+        {
+
+        }
+    }
+    private List<UserTable.UserGet> Users = new List<UserTable.UserGet>();
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await userService.GetUsersAsync();
+    }
+    private LoginModel loginModel = new LoginModel();
+
+    private bool _hasNavigated = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasNavigated)
+        {
+            var token = await localStorage.GetItemAsync<string>("authToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _hasNavigated = true;
+                NavigationManager.NavigateTo("/home");
+            }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        var token = await LoginService.LoginAsync(loginModel.Email, loginModel.Password);
+        if (!string.IsNullOrEmpty(token))
+        {
+            if (Users.FirstOrDefault(p => p.email == loginModel.Email).tipoUsuario == "Admin")
+            {
+                await localStorage.SetItemAsync("authToken", token);
+                await localStorage.SetItemAsync("email", loginModel.Email);
+                NavigationManager.NavigateTo("/home");
+            }
+            else
+            {
+                startTimer("Conta sem permissões.", "red");
+            }
+        }
+        else
+        {
+            startTimer("Conta não encontrada.","red");
+        }
+    }
+
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "Email is necessary.")]
+        public string Email { get; set; }
+
+        [Required(ErrorMessage = "Password is necessary.")]
+        public string Password { get; set; }
+    }
+
+}

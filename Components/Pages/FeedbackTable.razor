@@ -1,0 +1,289 @@
+﻿@page "/feedbacktable"
+@using IndoorMappingWebsite.Models
+@using IndoorMappingWebsite.Services
+@attribute [StreamRendering]
+@inject IFeedbackService feedbackService
+@inject IUserService userService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager NavigationManager
+<PageTitle>feedbacktable</PageTitle>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8f9fa;
+    }
+
+    /* Navbar Styles */
+    .navbarList {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: darkred;
+        padding: 0 20px;
+        list-style: none;
+        margin: 0;
+        height: 60px;
+    }
+
+    .logo a {
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        text-decoration: none;
+    }
+
+    .navbarItem {
+        margin-left: 15px;
+    }
+
+        .navbarItem a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+            .navbarItem a:hover:not(.active) {
+                background-color: #540000;
+            }
+
+            .navbarItem a.active {
+                background-color: gray;
+            }
+
+    /* Center container and buttons */
+    .center-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 60px);
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+
+        .center-container h1 {
+            margin-bottom: 3rem;
+            font-size: 2rem;
+            color: #343a40;
+        }
+
+    /* Filter input */
+    .search-bar {
+        margin-bottom: 1.5rem;
+        width: 100%;
+        max-width: 500px;
+    }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ced4da;
+            font-size: 1.1rem;
+        }
+
+    /* Table Container */
+    .table-container {
+        width: 80%;
+        height: calc(100vh - 200px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-top: 2rem;
+        margin-bottom: 0;
+        padding: 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        padding: 0;
+    }
+
+    th, td {
+        vertical-align: middle;
+        text-align: center;
+        padding: 12px;
+        font-size: 1.1rem;
+    }
+
+    th {
+        color: white;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+
+    thead {
+        position: sticky;
+        top: 0;
+        background-color: darkred;
+    }
+
+    button {
+        width: 80px;
+    }
+
+    .addbtn {
+        background-color: darkred;
+        position: sticky;
+        bottom: 0;
+    }
+
+    input {
+        text-align: center;
+    }
+
+    textarea {
+        height: 400px; /* ou qualquer valor que quiser */
+    }
+
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: black;
+        opacity: 0.5;
+        z-index: 10; /* um pouco abaixo do modal */
+    }
+
+
+</style>
+@if (showModal)
+{
+    <div class="modal-backdrop-custom"></div>
+}
+<ul class="navbarList">
+    <li class="logo"><a href="home">IndoorMap</a></li>
+    <div style="display: flex;">
+        <li class="navbarItem"><a href="home">Home</a></li>
+        <li class="navbarItem"><a href="map">Map</a></li>
+        <li class="navbarItem"><a href="usertable">Users</a></li>
+        <li class="navbarItem"><a href="beaconstable">Beacons</a></li>
+        <li class="navbarItem"><a href="pathsmap">Paths</a></li>
+        <li class="navbarItem"><a href="logstable">Logs</a></li>
+        <li class="navbarItem"><a href="infrastructuretable">Infrastructure</a></li>
+        <li class="navbarItem"><a class="active" href="feedbacktable">Feedback</a></li>
+    </div>
+</ul>
+
+<div class="center-container">
+    <h1>Feedback Table</h1>
+
+    <!-- Search Input -->
+    <div class="search-bar">
+        <input type="text" @oninput="OnSearchInput" placeholder="Search by user, path, evaluation, date or comment keyword..." class="form-control" />
+    </div>
+
+    <!-- Table with Filtered Data inside a Scrollable Container -->
+    <div class="table-container">
+        <table class="table table-striped m-0">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Path</th>
+                    <th>Evaluation</th>
+                    <th>Date</th>
+                    <th>Hour</th>
+                    <th>Comment</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var person in FilteredPeople)
+                {
+                    <tr>
+                        <td>
+                            @foreach(var user in users)
+                            {
+                                if(user.usuarioId == person.usuarioId)
+                                {
+                                    @user.email
+                                }
+                            }
+
+                        </td>
+                        <td>@person.caminhoId</td>
+                        <td>@(person.avaliacao) ★</td>
+                        <td>@person.dataHora.ToString("dd/MM/yy")</td>
+                        <td>@person.dataHora.ToString("HH:mm")</td>
+                        <td><button type="button" class="btn btn-primary" @onclick="() => changeComment(person.comentario)">See</button></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="modal" tabindex="-1" style="display:@(showModal ? "block" : "none")" aria-hidden="@(showModal ? "false" : "true")">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Comment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea disabled class="form-control">@commenttoSee</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _hasNavigated = false;
+    private bool showModal = false;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasNavigated)
+        {
+            var token = await localStorage.GetItemAsync<string>("authToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                _hasNavigated = true;
+                NavigationManager.NavigateTo("/");
+            }
+        }
+    }
+    private List<UserTable.UserGet> users = new List<UserTable.UserGet>();
+    private List<Feedback> feedbacks = new List<Feedback>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await userService.GetUsersAsync();
+        feedbacks = await feedbackService.GetFeedbacksAsync();
+        feedbacks = feedbacks.OrderByDescending(f => f.dataHora).ToList();
+
+    }
+    // The search query from the input
+    private string searchQuery = string.Empty;
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value.ToString();
+    }
+    private string commenttoSee;
+    private void changeComment(string comment)
+    {
+        commenttoSee = comment;
+        showModal = true;
+    }
+    private void CloseModal()
+    {
+        showModal = false; // Fecha o modal
+    }
+    // Get the filtered people based on the search query
+    private IEnumerable<Feedback> FilteredPeople =>
+        feedbacks.Where(p => (users.FirstOrDefault(u => u.usuarioId == p.usuarioId)).email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                          p.caminhoId.ToString().Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                          p.avaliacao.ToString().Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                          p.dataHora.ToString("dd/MM/yy").Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                        p.dataHora.ToString("HH:mm").Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                          p.comentario.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+
+}
+

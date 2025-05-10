@@ -1,0 +1,69 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\obj\\Release\\net8.0\\scopedcss\\projectbundle\\IndoorMappingWebsite.bundle.scp.css",
+      "PackagePath": "staticwebassets\\IndoorMappingWebsite.951wh8ellq.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\data\\indoor_map.geojson",
+      "PackagePath": "staticwebassets\\data\\indoor_map.geojson"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\imagens\\elevator_icon.png",
+      "PackagePath": "staticwebassets\\imagens\\elevator_icon.png"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\imagens\\entrance_door_icon.png",
+      "PackagePath": "staticwebassets\\imagens\\entrance_door_icon.png"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\imagens\\entrance_icon.png",
+      "PackagePath": "staticwebassets\\imagens\\entrance_icon.png"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\js\\backup.js",
+      "PackagePath": "staticwebassets\\js\\backup.js"
+    },
+    {
+      "Id": "C:\\Users\\rui_t\\OneDrive\\Ambiente de Trabalho\\MESTRADO\\2º SEMESTRE\\TASSI\\Indoor-Navigation-BackOffice\\Website\\IndoorMappingWebsite\\wwwroot\\js\\openlayers-init.js",
+      "PackagePath": "staticwebassets\\js\\openlayers-init.js"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.IndoorMappingWebsite.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.IndoorMappingWebsite.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.build.IndoorMappingWebsite.props",
+      "PackagePath": "build\\IndoorMappingWebsite.props"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.IndoorMappingWebsite.props",
+      "PackagePath": "buildMultiTargeting\\IndoorMappingWebsite.props"
+    },
+    {
+      "Id": "obj\\Release\\net8.0\\staticwebassets\\msbuild.buildTransitive.IndoorMappingWebsite.props",
+      "PackagePath": "buildTransitive\\IndoorMappingWebsite.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
